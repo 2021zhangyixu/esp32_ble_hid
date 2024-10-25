@@ -23,86 +23,54 @@
 #include "esp_gap_ble_api.h"
 #include "hid_dev.h"
 
-//HID BLE profile log tag
-#define HID_LE_PRF_TAG                        "HID_LE_PRF"
 
-/// Maximal number of HIDS that can be added in the DB
-#ifndef USE_ONE_HIDS_INSTANCE
-#define HIDD_LE_NB_HIDS_INST_MAX              (2)
-#else
-#define HIDD_LE_NB_HIDS_INST_MAX              (1)
-#endif
-
-// #define HIDD_GREAT_VER   0x01  //Version + Subversion
-// #define HIDD_SUB_VER     0x00  //Version + Subversion
-// #define HIDD_VERSION     ((HIDD_GREAT_VER<<8)|HIDD_SUB_VER)  //Version + Subversion
-
-#define HID_MAX_APPS                 1
-
-// Number of HID reports defined in the service
-#define HID_NUM_REPORTS          9
-
-#define	HID_RPT_ID_HEADPHONES_IN		5	//多媒体控制报告ID
-
-#define HIDD_APP_ID			 0x1812   // HID service APP ID
-#define BATTRAY_APP_ID       0x180f   // Battery service APP ID
-#define ATT_SVC_HID          0x1812
-
-/// Maximal number of Report Char. that can be added in the DB for one HIDS - Up to 11
-#define HIDD_LE_NB_REPORT_INST_MAX            (5)
-
-/// Maximal length of Report Char. Value
-#define HIDD_LE_REPORT_MAX_LEN                (255)
-/// Maximal length of Report Map Char. Value
-#define HIDD_LE_REPORT_MAP_MAX_LEN            (512)
-
-/// Length of Boot Report Char. Value Maximal Length
-#define HIDD_LE_BOOT_REPORT_MAX_LEN           (8)
-
-/* HID information flags */
-#define HID_FLAGS_REMOTE_WAKE           0x01      // RemoteWake
-#define HID_FLAGS_NORMALLY_CONNECTABLE  0x02      // NormallyConnectable
+#define HID_LE_PRF_TAG                   "HID_LE_PRF" // HID BLE profile log tag
+#define HID_NUM_REPORTS                  9            // Number of HID reports defined in the service
+#define HID_RPT_ID_HEADPHONES_IN         5            // Multimedia control report ID
+#define HIDD_APP_ID                      0x1812       // HID service APP ID
+#define ATT_SVC_HID                      0x1812
+#define HIDD_LE_REPORT_MAX_LEN           (255)        // Maximum length of Report Characteristic Value
+#define HIDD_LE_REPORT_MAP_MAX_LEN       (512)        // Maximum length of Report Map Characteristic Value
 
 /* HID protocol mode values */
-#define HID_PROTOCOL_MODE_BOOT          0x00      // Boot Protocol Mode
-#define HID_PROTOCOL_MODE_REPORT        0x01      // Report Protocol Mode
+#define HID_PROTOCOL_MODE_BOOT                 0x00   // Boot Protocol Mode
+#define HID_PROTOCOL_MODE_REPORT               0x01   // Report Protocol Mode
 
 /* Attribute value lengths */
-#define HID_PROTOCOL_MODE_LEN           1         // HID Protocol Mode
-#define HID_INFORMATION_LEN             4         // HID Information
-#define HID_REPORT_REF_LEN              2         // HID Report Reference Descriptor
-#define HID_EXT_REPORT_REF_LEN          2         // External Report Reference Descriptor
+#define HID_PROTOCOL_MODE_LEN                  1      // HID Protocol Mode
+#define HID_INFORMATION_LEN                    4      // HID Information
+#define HID_REPORT_REF_LEN                     2      // HID Report Reference Descriptor
+#define HID_EXT_REPORT_REF_LEN                 2      // External Report Reference Descriptor
 
-// HID feature flags
-#define HID_KBD_FLAGS             HID_FLAGS_REMOTE_WAKE
-
-/* HID Report type */
-#define HID_REPORT_TYPE_INPUT       1 // 向客户端输入数据，如鼠标或键盘
-#define HID_REPORT_TYPE_OUTPUT      2 // 客户端向服务端发送输出数据，如改变 LED 状态、控制振动反馈
-#define HID_REPORT_TYPE_FEATURE     3 // 用于提供附加的设备特性信息，通常用于配置设备的行为或状态
+/* HID Report types */
+#define HID_REPORT_TYPE_INPUT                  1      // Input data to the client, such as from a mouse or keyboard
+#define HID_REPORT_TYPE_OUTPUT                 2      // Output data sent from the client to the server, e.g., changing LED status or controlling vibration feedback
+#define HID_REPORT_TYPE_FEATURE                3      // Provides additional device feature information, typically used to configure device behavior or state
 
 // HID Service Attributes Indexes
 enum {
-    HIDD_LE_IDX_SVC,
+    HIDD_LE_IDX_SVC,  // Service
 
-    // 包含服务
+    // Included Service
     HIDD_LE_IDX_INCL_SVC,
 
     // Report Map
-    HIDD_LE_IDX_REPORT_MAP_CHAR,         // Report Map 特征申明 (UUID 0x2A4B)
-    HIDD_LE_IDX_REPORT_MAP_VAL,          // Report Map 特征值
+    HIDD_LE_IDX_REPORT_MAP_CHAR,         // Report Map characteristic declaration (UUID 0x2A4B)
+    HIDD_LE_IDX_REPORT_MAP_VAL,          // Report Map characteristic value
     HIDD_LE_IDX_REPORT_MAP_EXT_REP_REF,  // External Report Reference Descriptor
 
-/*****************多媒体控制服务属性表下标*******************/
-	HIDD_LE_IDX_REPORT_HEADPHONES_IN_CHAR,
-    HIDD_LE_IDX_REPORT_HEADPHONES_IN_VAL,
-    HIDD_LE_IDX_REPORT_HEADPHONES_IN_CCC,
-    HIDD_LE_IDX_REPORT_HEADPHONES_IN_REP_REF,
-/********************************************************/
-    HIDD_LE_IDX_NB,
+    /****** Multimedia Control Service Attribute Indexes ******/
+    HIDD_LE_IDX_REPORT_HEADPHONES_IN_CHAR,   // Headphones Input Characteristic
+    HIDD_LE_IDX_REPORT_HEADPHONES_IN_VAL,    // Headphones Input Characteristic Value
+    HIDD_LE_IDX_REPORT_HEADPHONES_IN_CCC,    // Headphones Input Client Characteristic Configuration
+    HIDD_LE_IDX_REPORT_HEADPHONES_IN_REP_REF,// Headphones Input Report Reference
+    /**********************************************************/
+
+    HIDD_LE_IDX_NB,  // Total number of indexes
 };
 
-/// HID 设备信息结构体
+
+/// HID device information structure
 typedef struct
 {
     /// bcdHID
@@ -116,15 +84,16 @@ typedef struct
 
 /* service engine control block */
 typedef struct {
-    esp_gatt_if_t          gatt_if;                  // 协议栈分配的，用于指定服务的标识符
-    uint16_t               att_tbl[HIDD_LE_IDX_NB];  // HID 的属性句柄列表
-    esp_hidd_event_cb_t    hidd_cb;                  // HID 回调函数
+    esp_gatt_if_t          gatt_if;                  // Identifier for the service assigned by the protocol stack
+    uint16_t               att_tbl[HIDD_LE_IDX_NB];  // List of attribute handles for HID
+    esp_hidd_event_cb_t    hidd_cb;                  // Callback function for HID events
 } hidd_le_env_t;
 
 extern hidd_le_env_t hidd_le_env;
 extern uint8_t hidProtocolMode;
 
-esp_err_t hidd_register_cb(void);
+void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
+									esp_ble_gatts_cb_param_t *param);
 
 
 #endif  ///__HID_DEVICE_LE_PRF__

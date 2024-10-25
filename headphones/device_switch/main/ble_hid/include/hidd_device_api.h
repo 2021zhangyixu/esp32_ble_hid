@@ -1,16 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 #ifndef __ESP_HIDD_API_H__
 #define __ESP_HIDD_API_H__
@@ -24,10 +12,10 @@ extern "C" {
 #endif
 
 typedef enum {
-    ESP_HIDD_EVENT_REG_FINISH = 0,  // HID GATT 服务创建完成事件
-    ESP_BAT_EVENT_REG,              // 电池电量 GATT 服务创建完成事件
-    ESP_HIDD_EVENT_BLE_CONNECT,     // HID GATT 服务连接事件
-    ESP_HIDD_EVENT_BLE_DISCONNECT,  // HID GATT 服务断开连接事件
+    ESP_HIDD_EVENT_REG_FINISH = 0,   // HID GATT service registration complete event
+    ESP_BAT_EVENT_REG,               // Battery level GATT service registration complete event
+    ESP_HIDD_EVENT_BLE_CONNECT,      // HID GATT service connection event
+    ESP_HIDD_EVENT_BLE_DISCONNECT,   // HID GATT service disconnection event
 } esp_hidd_cb_event_t;
 
 /**
@@ -70,6 +58,13 @@ typedef void (*esp_hidd_event_cb_t) (esp_hidd_cb_event_t event, esp_hidd_cb_para
  */
 esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks);
 
+/**
+ * @brief           This function is called to send HID report to host
+ * 
+ * @param[in]    conn_id: connection id
+ * @param[in]    report_id: report id
+ * 
+ */
 void hid_headphones_control(uint16_t conn_id, uint8_t key_cmd);
 
 #ifdef __cplusplus

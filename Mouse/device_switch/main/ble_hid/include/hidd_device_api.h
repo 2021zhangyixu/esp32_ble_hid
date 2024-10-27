@@ -67,14 +67,7 @@ typedef void (*esp_hidd_event_cb_t) (hidd_cb_event_t event, hidd_cb_param_t *par
  */
 esp_err_t hidd_register_callbacks(esp_hidd_event_cb_t callbacks);
 
-/**
- * @brief           This function is called to send HID report to host
- * 
- * @param[in]    conn_id: connection id
- * @param[in]    cmd: control command
- * 
- */
-void hid_headphones_control(uint16_t conn_id, uint8_t cmd);
+void hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y);
 
 #ifdef __cplusplus
 }

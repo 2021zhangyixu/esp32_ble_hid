@@ -9,34 +9,35 @@ static hid_report_map_t hid_rpt_map[HID_NUM_REPORTS];
 // HID Report Map characteristic value
 // Keyboard report descriptor (using format for Boot interface descriptor)
 static const uint8_t hidReportMap[] = {
-/*****************Multimedia control report descriptor*****************/
-	0x05, 0x0c,       // USAGE_PAGE (Consumer Devices)
-    0x09, 0x01,       // Usage (Consumer Control)
-    0xa1, 0x01,       // Collection (Application)
-    0x85, 0x05,       //   Report Id (5)
-    0x15, 0x00,       //   Logical minimum  (0)
-    0x25, 0x01,       //   Logical maximum (1)
-    0x75, 0x01,       //   Report Size (1)
-    0x95, 0x01,       //   Report Count (1)
-    0x09, 0xCD,       //   Usage (Play/Pause)						
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-    0x09, 0x6F,       //   Usage (Display Brightness Increment)		
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-    0x09, 0x70,       //   Usage (Display Brightness Decrement)		
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-    0x09, 0xb5,       //   Usage (Scan Next Track)					
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-    0x09, 0xb6,       //   Usage (Scan Previous Track)				
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-    0x09, 0xe9,       //   Usage (Volume Up)						
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-    0x09, 0xea,       //   Usage (Volume Down)						
-    0x81, 0x06,       //   Input (Data,Var,Rel)
-	0x95, 0x01, 	  //   Report Count (1)
-    0x75, 0x08,  	  //   Report Size (1)
-    0x81, 0x01,  	  //   Input: (Constant)						
-    0xc0              // End Collection
-
+/*****************Mouse control report descriptor*****************/
+    0x05, 0x01,  // Usage Page (Generic Desktop)
+    0x09, 0x02,  // Usage (Mouse)
+    0xA1, 0x01,  // Collection (Application)
+    0x85, 0x01,  // Report Id (1)
+    0x09, 0x01,  //   Usage (Pointer)
+    0xA1, 0x00,  //   Collection (Physical)
+    0x05, 0x09,  //     Usage Page (Buttons)
+    0x19, 0x01,  //     Usage Minimum (01) - Button 1
+    0x29, 0x03,  //     Usage Maximum (03) - Button 3
+    0x15, 0x00,  //     Logical Minimum (0)
+    0x25, 0x01,  //     Logical Maximum (1)
+    0x75, 0x01,  //     Report Size (1)
+    0x95, 0x03,  //     Report Count (3)
+    0x81, 0x02,  //     Input (Data, Variable, Absolute) - Button states
+    0x75, 0x05,  //     Report Size (5)
+    0x95, 0x01,  //     Report Count (1)
+    0x81, 0x01,  //     Input (Constant) - Padding or Reserved bits
+    0x05, 0x01,  //     Usage Page (Generic Desktop)
+    0x09, 0x30,  //     Usage (X)
+    0x09, 0x31,  //     Usage (Y)
+    0x09, 0x38,  //     Usage (Wheel)
+    0x15, 0x81,  //     Logical Minimum (-127)
+    0x25, 0x7F,  //     Logical Maximum (127)
+    0x75, 0x08,  //     Report Size (8)
+    0x95, 0x03,  //     Report Count (3)
+    0x81, 0x06,  //     Input (Data, Variable, Relative) - X & Y coordinate
+    0xC0,        //   End Collection
+    0xC0,        // End Collection
 /**********************************************************************/
 };
 
@@ -49,9 +50,8 @@ uint8_t hidProtocolMode = HID_PROTOCOL_MODE_REPORT;
 // HID External Report Reference Descriptor
 static uint16_t hidExtReportRefDesc = ESP_GATT_UUID_BATTERY_LEVEL;
 
-// Report ID and type of headphones control
-static uint8_t hidReportRefDmtIn[HID_REPORT_REF_LEN] =
-             { HID_RPT_ID_HEADPHONES_IN, HID_REPORT_TYPE_INPUT };
+static uint8_t hidReportRefMouseIn[HID_REPORT_REF_LEN] =
+             { HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT };
 
 /// hid Service uuid
 static uint16_t hid_le_svc = ATT_SVC_HID;
@@ -100,34 +100,30 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
                                              sizeof(uint16_t), sizeof(uint16_t),
                                              (uint8_t *)&hidExtReportRefDesc}},
     
-    /******** Multimedia Control Related Characteristics ********/
+    /******** Mouse Control Related Characteristics ********/
     // Characteristic Declaration
-    [HIDD_LE_IDX_REPORT_HEADPHONES_IN_CHAR]   = {{ESP_GATT_AUTO_RSP}, 
-                                                 {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid,
-                                                  ESP_GATT_PERM_READ,
-                                                  CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE,
-                                                  (uint8_t *)&char_prop_read_notify}},
-    
+    [HIDD_LE_IDX_REPORT_MOUSE_IN_CHAR] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid,
+                                          ESP_GATT_PERM_READ,
+                                          CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE,
+                                          (uint8_t *)&char_prop_read_notify}},
+
     // Characteristic Value, UUID 0x2A4D
-    [HIDD_LE_IDX_REPORT_HEADPHONES_IN_VAL]    = {{ESP_GATT_AUTO_RSP}, 
-                                                 {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid,
-                                                  ESP_GATT_PERM_READ,
-                                                  HIDD_LE_REPORT_MAX_LEN, 0,
-                                                  NULL}},
-    
+    [HIDD_LE_IDX_REPORT_MOUSE_IN_VAL]  = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_uuid,
+                                          ESP_GATT_PERM_READ,
+                                          HIDD_LE_REPORT_MAX_LEN, 0,
+                                          NULL}},
+
     // Client Characteristic Configuration, UUID 2902
-    [HIDD_LE_IDX_REPORT_HEADPHONES_IN_CCC]    = {{ESP_GATT_AUTO_RSP}, 
-                                                 {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid,
-                                                  (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE_ENCRYPTED),
-                                                  sizeof(uint16_t), 0,
-                                                  NULL}},
-    
-    // Report Reference, UUID 2908, indicates that the current characteristic uses MAP 5, report type is input
-    [HIDD_LE_IDX_REPORT_HEADPHONES_IN_REP_REF] = {{ESP_GATT_AUTO_RSP}, 
-                                                  {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid,
-                                                   ESP_GATT_PERM_READ,
-                                                   sizeof(hidReportRefDmtIn), sizeof(hidReportRefDmtIn),
-                                                   hidReportRefDmtIn}},
+    [HIDD_LE_IDX_REPORT_MOUSE_IN_CCC]  = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid,
+                                          (ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE),
+                                          sizeof(uint16_t), 0,
+                                          NULL}},
+
+    // Report Reference, UUID 2908, indicates that the current characteristic uses MAP 1, report type is input
+    [HIDD_LE_IDX_REPORT_MOUSE_REP_REF] = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&hid_report_ref_descr_uuid,
+                                          ESP_GATT_PERM_READ,
+                                          sizeof(hidReportRefMouseIn), sizeof(hidReportRefMouseIn),
+                                          hidReportRefMouseIn}},
     /************************************************************/
 };
 
@@ -136,15 +132,14 @@ static esp_gatts_attr_db_t hidd_le_gatt_db[HIDD_LE_IDX_NB] =
  */
 static void hid_add_id_tbl(void)
 {
-    // Multimedia control mapping table encapsulation
-    hid_rpt_map[0].id = hidReportRefDmtIn[0];
-    hid_rpt_map[0].type = hidReportRefDmtIn[1];
-    hid_rpt_map[0].handle = hidd_le_env.att_tbl[HIDD_LE_IDX_REPORT_HEADPHONES_IN_VAL];
-    hid_rpt_map[0].cccdHandle = hidd_le_env.att_tbl[HIDD_LE_IDX_REPORT_HEADPHONES_IN_CCC];
+    // Mouse input report
+    hid_rpt_map[0].id = hidReportRefMouseIn[0];
+    hid_rpt_map[0].type = hidReportRefMouseIn[1];
+    hid_rpt_map[0].handle = hidd_le_env.att_tbl[HIDD_LE_IDX_REPORT_MOUSE_IN_VAL];
+    hid_rpt_map[0].cccdHandle = hidd_le_env.att_tbl[HIDD_LE_IDX_REPORT_MOUSE_IN_VAL];
     hid_rpt_map[0].mode = HID_PROTOCOL_MODE_REPORT;
-    
-    ESP_LOGI(HID_LE_PRF_TAG, "Headphones handle = %d, Report ID = %d, Type = %d", 
-             hid_rpt_map[0].handle, hid_rpt_map[0].id, hid_rpt_map[0].type);
+    ESP_LOGI(HID_LE_PRF_TAG,"Mouse headle =	%d,Report ID = %d,type = %d ",hid_rpt_map[0].handle,hid_rpt_map[0].id,hid_rpt_map[0].type);
+
 
     // Store the supported report ID map
     hid_dev_register_reports(HID_NUM_REPORTS, hid_rpt_map);

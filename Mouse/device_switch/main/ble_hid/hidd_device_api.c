@@ -4,6 +4,8 @@
 #include "hid_dev.h"
 #include "esp_log.h"
 
+// HID mouse input report length
+#define HID_MOUSE_IN_RPT_LEN        5
 
 esp_err_t hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
 {
@@ -28,11 +30,18 @@ esp_err_t hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
     return hidd_status;
 }
 
-void hid_headphones_control(uint16_t conn_id, uint8_t key_cmd)
+void hidd_send_mouse_value(uint16_t conn_id, uint8_t mouse_button, int8_t mickeys_x, int8_t mickeys_y)
 {
+    uint8_t buffer[HID_MOUSE_IN_RPT_LEN];
+
+    buffer[0] = mouse_button;   // Buttons
+    buffer[1] = mickeys_x;      // X
+    buffer[2] = mickeys_y;      // Y
+    buffer[3] = 0;              // Wheel
+    buffer[4] = 0;              // AC Pan
+
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
-                        HID_RPT_ID_HEADPHONES_IN, HID_REPORT_TYPE_INPUT, sizeof(key_cmd), &key_cmd);
+                        HID_RPT_ID_MOUSE_IN, HID_REPORT_TYPE_INPUT, HID_MOUSE_IN_RPT_LEN, buffer);
     return;
 }
-
 

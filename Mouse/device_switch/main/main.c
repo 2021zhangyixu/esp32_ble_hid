@@ -35,7 +35,7 @@ static esp_ble_adv_data_t hidd_adv_data = {
     .include_txpower = true,                          // Include transmit power
     .min_interval = 0x0006,                           // Slave connection min interval, Time = min_interval * 1.25 msec
     .max_interval = 0x0010,                           // Slave connection max interval, Time = max_interval * 1.25 msec
-    .appearance = ESP_BLE_APPEARANCE_GENERIC_HID,     // HID Generic, ESP_HID_APPEARANCE_KEYBOARD
+    .appearance = ESP_BLE_APPEARANCE_HID_MOUSE,       // HID MOUSE appearance
     .manufacturer_len = 0,                            // No manufacturer data
     .p_manufacturer_data = NULL,
     .service_data_len = 0,                            // No service data
@@ -54,7 +54,7 @@ static esp_ble_adv_params_t hidd_adv_params = {
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY  // Allow scan and connection
 };
 
-static void send_headphones_value(uint8_t *value)
+static void hid_control(uint8_t *value)
 {
     if (adv_status) {
         switch (*value) {
@@ -75,16 +75,38 @@ static void send_headphones_value(uint8_t *value)
             }
         }
     }
+}
+
+static void send_mouse_value(uint32_t *value)
+{
+    // Key values for arrow keys on the keyboard
+    #define KEY_UP                  0x415B1B   // Up Arrow Key
+    #define KEY_DOWN                0x425B1B   // Down Arrow Key
+    #define KEY_LEFT                0x445B1B   // Left Arrow Key
+    #define KEY_RIGHT               0x435B1B   // Right Arrow Key
+
+    uint8_t mouse_button = 0;  // Mouse button state, set to 0 as default (no button pressed)
+    char x = 0, y = 0;         // X and Y values for mouse movement
+
+    ESP_LOGI(HID_DEMO_TAG, "send_mouse_value hid_conn_id[%d] : %d", remote_conn_id, hid_conn_id[remote_conn_id]);
+
+    // Check if the connection is secure
     if (sec_conn) {
         switch (*value) {
-            case '0':{
-                ESP_LOGI(HID_DEMO_TAG,"hid_headphones_control hid_conn_id[%d] : %d",remote_conn_id,hid_conn_id[remote_conn_id]);
-                hid_headphones_control(hid_conn_id[remote_conn_id],HIDD_AUDIO_PAUSE_PLAY);
-                break;
-            }
+            case KEY_RIGHT: x = 5;  goto send_value;  // Move right (positive X)
+            case KEY_LEFT:  x = -5; goto send_value;  // Move left (negative X)
+            case KEY_UP:    y = -5; goto send_value;  // Move up (negative Y)
+            case KEY_DOWN:  y = 5;  goto send_value;  // Move down (positive Y)
+send_value:
+            // Send the mouse value with updated coordinates
+            hidd_send_mouse_value(hid_conn_id[remote_conn_id], mouse_button, x, y);
+            break;
+
+            default: break;
         }
     }
 }
+
 
 static void uart_event_task(void *pvParameters)
 {
@@ -102,9 +124,11 @@ static void uart_event_task(void *pvParameters)
                 case UART_DATA: // Triggered on receiving new data. Indicates that data is available in the UART receive buffer.
                     uart_read_bytes(EX_UART_NUM, dtmp, event.size, portMAX_DELAY);
                     ESP_LOGI(HID_DEMO_TAG, "[UART DATA]: %d [DATA EVT]: %c", event.size, *dtmp);
-                    if (event.size == 1) {
-                        // Multimedia control
-                        send_headphones_value(dtmp);
+                    if (event.size == 3) {
+                        // Mouse control
+                        send_mouse_value(dtmp);
+                    } else if (event.size == 1) {
+                        hid_control(dtmp);
                     } else {
                         ESP_LOGI(HID_DEMO_TAG, "Input error");
                     }
